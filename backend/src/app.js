@@ -15,7 +15,7 @@ app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 // Rate limiting on auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
+  max: 100, // Increased for development to prevent 429 Too Many Requests
   message: { success: false, error: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },
 });
 app.use('/api/auth', authLimiter);
