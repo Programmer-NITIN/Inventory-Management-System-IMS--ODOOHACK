@@ -29,6 +29,13 @@ const dashboardController = {
       res.json({ success: true, data });
     } catch (err) { next(err); }
   },
+
+  async getLowStockProducts(req, res, next) {
+    try {
+      const data = await dashboardService.getLowStockProducts();
+      res.json({ success: true, data });
+    } catch (err) { next(err); }
+  },
 };
 
 module.exports = dashboardController;

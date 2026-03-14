@@ -34,6 +34,67 @@ const deliveryService = {
     }
   },
 
+  /**
+   * PICK — Select items from warehouse. Moves status from draft → picked.
+   * Checks that sufficient stock exists for each item.
+   */
+  async pickDelivery(deliveryId, userId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const delivery = await deliveryModel.getForUpdate(client, deliveryId);
+      if (!delivery) throw new AppError('Delivery not found', 404, 'NOT_FOUND');
+      if (delivery.status !== 'draft') throw new AppError(`Cannot pick: delivery is "${delivery.status}", expected "draft"`, 400, 'INVALID_STATUS');
+
+      // Verify sufficient stock for all items before marking as picked
+      const items = await deliveryModel.getItems(client, deliveryId);
+      for (const item of items) {
+        const currentQty = await stockModel.getQuantity(client, item.product_id, item.location_id);
+        if (currentQty < item.quantity) {
+          throw new AppError(
+            `Insufficient stock for product ${item.product_id} at location ${item.location_id}. Available: ${currentQty}, Requested: ${item.quantity}`,
+            400, 'INSUFFICIENT_STOCK'
+          );
+        }
+      }
+
+      await deliveryModel.updateStatus(client, deliveryId, 'picked');
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
+   * PACK — Pack the picked items. Moves status from picked → packed.
+   */
+  async packDelivery(deliveryId, userId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const delivery = await deliveryModel.getForUpdate(client, deliveryId);
+      if (!delivery) throw new AppError('Delivery not found', 404, 'NOT_FOUND');
+      if (delivery.status !== 'picked') throw new AppError(`Cannot pack: delivery is "${delivery.status}", expected "picked"`, 400, 'INVALID_STATUS');
+
+      await deliveryModel.updateStatus(client, deliveryId, 'packed');
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
+   * VALIDATE — Final step. Decreases stock and logs to ledger.
+   * Moves status from packed → done.
+   */
   async validateDelivery(deliveryId, userId) {
     const client = await pool.connect();
     try {
@@ -43,11 +104,12 @@ const deliveryService = {
       if (!delivery) throw new AppError('Delivery not found', 404, 'NOT_FOUND');
       if (delivery.status === 'done') throw new AppError('Delivery already validated', 400, 'ALREADY_DONE');
       if (delivery.status === 'cancelled') throw new AppError('Cannot validate cancelled delivery', 400, 'CANCELLED');
+      if (delivery.status !== 'packed') throw new AppError(`Cannot validate: delivery is "${delivery.status}", expected "packed". Items must be picked and packed first.`, 400, 'INVALID_STATUS');
 
       const items = await deliveryModel.getItems(client, deliveryId);
 
       for (const item of items) {
-        // Check sufficient stock
+        // Final check: ensure sufficient stock
         const currentQty = await stockModel.getQuantity(client, item.product_id, item.location_id);
         if (currentQty < item.quantity) {
           throw new AppError(

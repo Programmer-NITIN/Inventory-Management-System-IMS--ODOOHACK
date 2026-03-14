@@ -27,10 +27,24 @@ const deliveryController = {
     } catch (err) { next(err); }
   },
 
+  async pick(req, res, next) {
+    try {
+      await deliveryService.pickDelivery(parseInt(req.params.id), req.user.id);
+      res.json({ success: true, data: { message: 'Items picked successfully. Ready for packing.' } });
+    } catch (err) { next(err); }
+  },
+
+  async pack(req, res, next) {
+    try {
+      await deliveryService.packDelivery(parseInt(req.params.id), req.user.id);
+      res.json({ success: true, data: { message: 'Items packed successfully. Ready for validation.' } });
+    } catch (err) { next(err); }
+  },
+
   async validate(req, res, next) {
     try {
       await deliveryService.validateDelivery(parseInt(req.params.id), req.user.id);
-      res.json({ success: true, data: { message: 'Delivery validated. Stock updated.' } });
+      res.json({ success: true, data: { message: 'Delivery validated. Stock reduced automatically.' } });
     } catch (err) { next(err); }
   },
 

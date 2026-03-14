@@ -68,16 +68,16 @@ const productModel = {
     return result.rows;
   },
 
-  async create({ name, sku, categoryId, unit, reorderLevel, description }) {
+  async create({ name, sku, categoryId, unit, reorderLevel, description, cost, price }) {
     const result = await pool.query(
-      `INSERT INTO products (name, sku, category_id, unit, reorder_level, description)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, sku, categoryId, unit || 'units', reorderLevel || 0, description]
+      `INSERT INTO products (name, sku, category_id, unit, reorder_level, description, cost, price)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [name, sku, categoryId, unit || 'units', reorderLevel || 0, description, cost || null, price || null]
     );
     return result.rows[0];
   },
 
-  async update(id, { name, sku, categoryId, unit, reorderLevel, description }) {
+  async update(id, { name, sku, categoryId, unit, reorderLevel, description, cost, price }) {
     const result = await pool.query(
       `UPDATE products SET
          name = COALESCE($1, name),
@@ -86,9 +86,11 @@ const productModel = {
          unit = COALESCE($4, unit),
          reorder_level = COALESCE($5, reorder_level),
          description = COALESCE($6, description),
+         cost = COALESCE($7, cost),
+         price = COALESCE($8, price),
          updated_at = NOW()
-       WHERE id = $7 RETURNING *`,
-      [name, sku, categoryId, unit, reorderLevel, description, id]
+       WHERE id = $9 RETURNING *`,
+      [name, sku, categoryId, unit, reorderLevel, description, cost, price, id]
     );
     return result.rows[0];
   },

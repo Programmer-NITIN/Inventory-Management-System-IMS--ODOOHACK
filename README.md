@@ -1,164 +1,310 @@
-# CoreInventory – Local Setup Guide
+# 🏭 CoreInventory — Inventory Management System
 
-Follow these steps to configure and run the CoreInventory Management System locally.
+<div align="center">
 
-## Prerequisites
-1. **Node.js**: Ensure you have Node.js installed (v18 or higher recommended).
-2. **PostgreSQL**: Ensure you have PostgreSQL installed and running on your machine.
-3. **Firebase Account**: You need a Firebase project for Authentication.
+![CoreInventory](https://img.shields.io/badge/CoreInventory-v1.0-7c3aed?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI0IiBmaWxsPSIjN2MzYWVkIi8+PHRleHQgeD0iMTIiIHk9IjE3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiPkM8L3RleHQ+PC9zdmc+)
+![Next.js](https://img.shields.io/badge/Next.js_16-black?style=flat-square&logo=next.js)
+![Express](https://img.shields.io/badge/Express.js-000?style=flat-square&logo=express)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase_Auth-FFCA28?style=flat-square&logo=firebase&logoColor=black)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+
+**A modern, full-stack Inventory Management System built for real warehouse operations.**
+
+[Features](#-features) · [Tech Stack](#-tech-stack) · [Architecture](#-architecture) · [Quick Start](#-quick-start) · [API Reference](#-api-reference)
+
+</div>
 
 ---
 
-## Part 1: PostgreSQL Database Setup
+## ✨ Features
 
-If you do not have PostgreSQL installed, follow these steps to install and configure it on Windows:
+### 📦 Core Operations
+- **Receipts** — Create and validate incoming stock orders
+- **Delivery Orders** — Full Pick → Pack → Validate workflow with automatic stock reduction
+- **Internal Transfers** — Move goods between warehouses and locations
+- **Stock Adjustments** — Reconcile system stock with physical counts
 
-### 1. Download and Install PostgreSQL
-1. Go to the official PostgreSQL download page: [EnterpriseDB PostgreSQL Installers](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads).
-2. Download the latest version for **Windows x86-64**.
-3. Run the installer (`.exe` file).
-4. During installation:
-   - Keep the default installation directory.
-   - **Select components:** Ensure *PostgreSQL Server*, *pgAdmin 4* (GUI tool), and *Command Line Tools* are checked.
-   - **Data Directory:** Keep the default.
-   - **Password:** Create a strong password for the default `postgres` superuser. **Remember this password**, as you will need it for the `.env` file!
-   - **Port:** Keep the default `5432`.
-   - **Locale:** Keep the default or select your region.
-5. Finish the installation (you can uncheck the Stack Builder prompt at the end).
+### 📊 Dashboard & Analytics (Manager)
+- KPI cards (total products, low stock, out of stock, pending operations)
+- Pie chart — Inventory distribution by category
+- Bar chart — Warehouse utilization
+- Line chart — Stock movement over 30 days
+- Low stock alerts with reorder thresholds
 
-### 2. Create the Database
-You can create the database using either the GUI (pgAdmin) or the command line (psql).
+### 👥 Role-Based Access
+| Feature | Manager | Staff |
+|---------|---------|-------|
+| Dashboard analytics | ✅ | Quick-access cards |
+| Create operations | ✅ | ✅ |
+| Validate / Cancel operations | ✅ | ❌ |
+| Manage products | ✅ | ✅ |
+| Staff approval panel | ✅ | ❌ |
+| Warehouse management | ✅ | View only |
 
-**Option A: Using pgAdmin 4 (GUI - Recommended for beginners)**
-1. Open **pgAdmin 4** from your Windows Start menu.
-2. Enter the password you created during installation to unlock pgAdmin.
-3. In the left sidebar, expand **Servers** > **PostgreSQL [Version]**. (Enter your password again if prompted).
-4. Right-click on **Databases** and select **Create** > **Database**.
-5. In the "Database" field, type exactly: `coreinventory`
-6. Click **Save**.
+### 🎨 Modern UI
+- **Glassmorphism** design with frosted glass cards and animated backgrounds
+- **Horizontal top navigation** with Odoo-inspired module switching
+- **Profile dropdown** in top-right corner
+- **Animated splash screen** (once per session)
+- **Responsive** — works on desktop and mobile
+- **Purple/violet** professional color palette
 
-**Option B: Using psql (Command Line)**
-1. Open the "SQL Shell (psql)" application from your Windows Start menu.
-2. Press `Enter` for Server, Database, Port, and Username to accept the defaults.
-3. Type the password you created during installation (the characters won't show up on screen).
-4. Run the following SQL command to create the database:
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 16, React 19, TailwindCSS 4 |
+| **Backend** | Express.js, Node.js |
+| **Database** | PostgreSQL (14 tables, full schema) |
+| **Auth** | Firebase Authentication (Email/Password + Google) |
+| **Charts** | Recharts |
+| **HTTP** | Axios with interceptors |
+| **Security** | Helmet, CORS, Rate Limiting, Firebase Admin SDK |
+| **Icons** | React Icons (Heroicons v2) |
+
+---
+
+## 🏗 Architecture
+
+```
+CoreInventory/
+├── backend/                   # Express.js REST API
+│   ├── server.js              # Entry point
+│   ├── src/
+│   │   ├── app.js             # Express app (middleware, routes)
+│   │   ├── config/            # DB, Firebase, env config
+│   │   ├── controllers/       # Request handlers (10 controllers)
+│   │   ├── middleware/         # Auth, authorization, validation, errors
+│   │   ├── models/            # PostgreSQL query layer (10 models)
+│   │   ├── routes/            # API route definitions (12 modules)
+│   │   ├── services/          # Business logic (receipts, deliveries, transfers, etc.)
+│   │   └── utils/             # AppError, pagination
+│   ├── migrations/            # SQL schema (3 migration files)
+│   └── seeds/                 # Demo data (categories, warehouses, products)
+│
+├── frontend/                  # Next.js 16 App
+│   ├── src/
+│   │   ├── app/               # Pages (15 routes)
+│   │   │   ├── dashboard/     # Manager analytics / Staff quick-access
+│   │   │   ├── products/      # CRUD product catalog
+│   │   │   ├── operations/    # Receipts, Deliveries, Transfers, Adjustments
+│   │   │   ├── history/       # Stock ledger audit trail
+│   │   │   ├── settings/      # Warehouse & location management
+│   │   │   ├── profile/       # User profile + staff approval
+│   │   │   └── login/         # Auth flow (sign in / sign up / role selection)
+│   │   ├── components/        # Layout (TopNavbar, SplashScreen), UI (FilterTabs)
+│   │   ├── context/           # AuthContext (Firebase + backend sync)
+│   │   ├── lib/               # Firebase client SDK
+│   │   └── services/          # Axios API client with token interceptor
+│   └── public/                # Static assets
+│
+└── README.md                  # ← You are here
+```
+
+### Database Schema (11 Tables)
+```
+users ─── receipts ─── receipt_items
+  │         │
+  │       deliveries ── delivery_items
+  │         │
+  │       transfers ─── transfer_items
+  │         │
+  │       adjustments
+  │
+products ── stock ──── stock_ledger
+  │
+categories
+  │
+warehouses ── locations
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js** ≥ 18
+- **PostgreSQL** ≥ 14
+- **Firebase** project (for authentication)
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/YOUR_USERNAME/CoreInventory.git
+cd CoreInventory
+```
+
+### 2. Database Setup
+```sql
+-- In psql or pgAdmin:
+CREATE DATABASE coreinventory;
+```
+
+### 3. Backend Setup
+```bash
+cd backend
+npm install
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+```env
+PORT=5000
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/coreinventory
+CORS_ORIGIN=http://localhost:3000
+```
+
+**Firebase Admin SDK** — choose one method:
+- **Option A**: Download the service account JSON from Firebase Console → Project Settings → Service Accounts → Generate New Private Key. Save as `backend/src/config/firebase-service-account.json`
+- **Option B**: Set environment variables in `.env`:
+  ```env
+  FIREBASE_PROJECT_ID=your-project-id
+  FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxx@your-project.iam.gserviceaccount.com
+  FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY\n-----END PRIVATE KEY-----\n"
+  ```
+
+Run migrations & seed data:
+```bash
+npm run migrate
+```
+
+Start the backend:
+```bash
+npm run dev
+# ✅ Database connected
+# 🚀 CoreInventory API running on port 5000
+```
+
+### 4. Frontend Setup
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local
+```
+
+Edit `frontend/.env.local` with your Firebase web app config:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
+```
+
+Start the frontend:
+```bash
+npm run dev
+# ▲ Next.js 16 — http://localhost:3000
+```
+
+### 5. First Login
+1. In Firebase Console → Authentication → Sign-in method → Enable **Email/Password** and **Google**
+2. Create a user via the app's Sign Up flow
+3. To make yourself a Manager, run:
    ```sql
-   CREATE DATABASE coreinventory;
+   UPDATE users SET role = 'manager' WHERE email = 'your@email.com';
    ```
-5. Type `\q` and press Enter to exit.
-
-### 3. Verify Database Credentials
-Your database URL format for the backend `.env` file will look like this:
-`postgres://[username]:[password]@localhost:[port]/[database_name]`
-
-Because you used the default settings, yours will be:
-`postgres://postgres:YOUR_PASSWORD@localhost:5432/coreinventory`
+4. Refresh the page — you'll see the full analytics dashboard
 
 ---
 
-## Part 2: Backend Setup
+## 📡 API Reference
 
-1. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
+Base URL: `http://localhost:5000/api`
 
-2. **Install Dependencies:**
-   *(If you haven't already)*
-   ```bash
-   npm install
-   ```
+All authenticated endpoints require: `Authorization: Bearer <firebase-id-token>`
 
-3. **Environment Setup:**
-   - Copy the example environment file to create your actual `.env` file:
-     ```bash
-     cp .env.example .env
-     ```
-   - Open `backend/.env` and update the database configuration to match your local PostgreSQL setup:
-     ```env
-     PORT=5000
-     # Change 'postgres' and 'password' to your actual PostgreSQL username and password
-     DATABASE_URL=postgres://postgres:password@localhost:5432/coreinventory
-     CORS_ORIGIN=http://localhost:3000
-     ```
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | Sync Firebase user to DB |
+| GET | `/auth/me` | Get current user |
+| GET | `/auth/staff` | List all staff (manager) |
+| PUT | `/auth/staff/:id/approve` | Approve staff (manager) |
+| PUT | `/auth/staff/:id/remove` | Remove staff access (manager) |
 
-4. **Firebase Admin SDK Setup:**
-   - Go to your [Firebase Console](https://console.firebase.google.com/).
-   - Click the **Gear icon** (Project settings) > **Service accounts**.
-   - Click **Generate new private key** and save the `.json` file.
-   - Rename the downloaded file to `firebase-service-account.json`.
-   - Place this file directly inside the `backend/src/config/` folder.
+### Products
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/products` | List products (search, pagination) |
+| GET | `/products/:id` | Get product by ID |
+| POST | `/products` | Create product |
+| PUT | `/products/:id` | Update product |
+| DELETE | `/products/:id` | Delete product |
 
-5. **Run Database Migrations and Seed Data:**
-   This command will create all the necessary 14 tables and insert some initial demo data (warehouses, locations, categories, products):
-   ```bash
-   npm run migrate
-   ```
+### Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/receipts` | List receipts |
+| POST | `/receipts` | Create receipt |
+| POST | `/receipts/:id/validate` | Validate receipt (adds stock) |
+| POST | `/receipts/:id/cancel` | Cancel receipt |
+| GET | `/deliveries` | List delivery orders |
+| POST | `/deliveries` | Create delivery order |
+| POST | `/deliveries/:id/pick` | Pick items |
+| POST | `/deliveries/:id/pack` | Pack items |
+| POST | `/deliveries/:id/validate` | Validate delivery (reduces stock) |
+| POST | `/deliveries/:id/cancel` | Cancel delivery |
+| GET | `/transfers` | List transfers |
+| POST | `/transfers` | Create transfer |
+| POST | `/transfers/:id/complete` | Complete transfer |
+| GET | `/adjustments` | List adjustments |
+| POST | `/adjustments` | Create adjustment |
 
-6. **Start the Backend Server:**
-   ```bash
-   npm run dev
-   ```
-   *You should see a message saying `✅ Database connected` and `🚀 CoreInventory API running on port 5000`.*
-
----
-
-## Part 3: Frontend Setup
-
-1. **Open a new terminal window** and navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Dependencies:**
-   *(If you haven't already)*
-   ```bash
-   npm install
-   ```
-
-3. **Environment Setup:**
-   - Copy the example environment file:
-     ```bash
-     cp .env.local.example .env.local
-     ```
-   - Go back to your [Firebase Console](https://console.firebase.google.com/).
-   - Click the **Gear icon** (Project settings) > **General**.
-   - Scroll down to "Your apps". If you haven't added a web app, click the **`</>` (Web)** icon to create one.
-   - Copy the `firebaseConfig` keys from the Firebase console and paste them into `frontend/.env.local`:
-     ```env
-     NEXT_PUBLIC_API_URL=http://localhost:5000/api
-     NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key-here
-     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-     NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-     NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
-     ```
-
-4. **Start the Frontend Server:**
-   ```bash
-   npm run dev
-   ```
-   *The Next.js app will start compiling.*
+### Other
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/categories` | List categories |
+| GET | `/warehouses` | List warehouses |
+| POST | `/warehouses` | Create warehouse (manager) |
+| GET | `/warehouses/:id/locations` | List locations |
+| POST | `/locations` | Create location (manager) |
+| GET | `/stock` | Get stock levels |
+| GET | `/stock-ledger` | Full audit trail |
+| GET | `/dashboard/kpis` | Dashboard KPIs |
+| GET | `/dashboard/charts/*` | Chart data endpoints |
+| GET | `/dashboard/low-stock` | Low stock alerts |
+| GET | `/health` | Health check |
 
 ---
 
-## Part 4: Using the Application
+## 📁 Environment Variables
 
-1. **Set Up Authentication:**
-   - In your Firebase Console, go to **Build > Authentication** and **Get Started**.
-   - Go to the **Sign-in method** tab and enable **Email/Password**.
-   - Next, go to the **Users** tab and click **Add User** to create your first admin account (e.g., `admin@coreinventory.com` / `password123`).
+### Backend (`backend/.env`)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PORT` | Server port (default: 5000) | ✅ |
+| `DATABASE_URL` | PostgreSQL connection string | ✅ |
+| `CORS_ORIGIN` | Allowed frontend origin | ✅ |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | If no JSON file |
+| `FIREBASE_CLIENT_EMAIL` | Firebase admin email | If no JSON file |
+| `FIREBASE_PRIVATE_KEY` | Firebase private key | If no JSON file |
 
-2. **Log In:**
-   - Open your browser and go to `http://localhost:3000`.
-   - Log in using the email and password you just created in Firebase.
+### Frontend (`frontend/.env.local`)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL | ✅ |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API key | ✅ |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain | ✅ |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID | ✅ |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase storage bucket | ✅ |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID | ✅ |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase app ID | ✅ |
 
-3. **Troubleshooting Sync:**
-   - On the very first login, the frontend will take your Firebase token and sync your user account into the PostgreSQL database. 
-   - Since the DB sets the default role to `operator` for new users, your initial login won't have manager privileges.
-   - **To switch to Manager (optional):** Open your SQL client and run:
-     ```sql
-     UPDATE users SET role = 'manager' WHERE email = 'admin@coreinventory.com';
-     ```
-   - Refresh the page to see all Manager-level dashboard charts and the ability to validate operations.
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the OdooHacks Hackathon**
+
+</div>

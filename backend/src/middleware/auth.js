@@ -4,6 +4,8 @@ const AppError = require('../utils/AppError');
 
 /**
  * Middleware: Verify Firebase ID token and attach user to request.
+ * Note: inactive staff are allowed through — frontend handles the pending state.
+ * Only truly deactivated managers are blocked.
  */
 async function authenticate(req, res, next) {
   try {
@@ -17,7 +19,7 @@ async function authenticate(req, res, next) {
 
     // Fetch user from database
     const result = await pool.query(
-      'SELECT id, firebase_uid, email, display_name, role, is_active FROM users WHERE firebase_uid = $1',
+      'SELECT id, firebase_uid, email, display_name, role, is_active, created_at FROM users WHERE firebase_uid = $1',
       [decoded.uid]
     );
 
@@ -25,10 +27,7 @@ async function authenticate(req, res, next) {
       throw new AppError('User not found in system. Contact administrator.', 403, 'USER_NOT_FOUND');
     }
 
-    if (!result.rows[0].is_active) {
-      throw new AppError('Account is deactivated', 403, 'ACCOUNT_INACTIVE');
-    }
-
+    // Allow all users through the middleware (frontend handles approval state)
     req.user = result.rows[0];
     next();
   } catch (err) {

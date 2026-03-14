@@ -21,6 +21,10 @@ router.use(authenticate);
 router.get('/', deliveryController.list);
 router.get('/:id', deliveryController.getById);
 router.post('/', validate(deliverySchema), deliveryController.create);
+
+// Pick → Pack → Validate flow
+router.post('/:id/pick', deliveryController.pick);
+router.post('/:id/pack', deliveryController.pack);
 router.post('/:id/validate', authorize(['manager']), deliveryController.validate);
 router.post('/:id/cancel', authorize(['manager']), deliveryController.cancel);
 
